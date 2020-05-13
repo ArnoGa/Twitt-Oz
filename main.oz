@@ -46,13 +46,11 @@ define
    %{Dictionary.put Data test  {Append {Dictionary.get Data test} 2} }
    %{Browse {Dictionary.get Data test}}
 
-   S = "j'Ai envie dE tester un stRing, parce que jsp cOmment ca marche"
-
    fun {Format S}
       case S
       of nil then nil
       [] H|T then
-	 if {Or {Char.isAlpha H} == true {Char.isSpace H} == true}
+	 if {And {Or {Char.isAlNum H} == true {Char.isSpace H} == true} H \= 226}
 	 then  {Char.toLower H} | {Format T}
 	 else {Format T}
 	 end
@@ -78,6 +76,18 @@ define
       {ParseLines File}
    end
 
+   fun {ParseAllFiles N}
+      IN_NAME ="test_"#N#".txt"
+   in
+      if N == 3 then nil
+      else
+	 {Append thread {ParseFile IN_NAME} end {ParseAllFiles N+1}}
+      end
+   end
+
    {Browse {ParseFile "tweets/part_1.txt"}}
+   %{Browse {Reader.scan {New Reader.textfile init(name:"tweets/part_1.txt")} 7}}
+   %{Browse {ParseAllFiles 1}}
+   
    
 end
