@@ -2,8 +2,9 @@ functor
 import
     Open
 export
-    textfile:TextFile
-    scan:Scan
+   textfile:TextFile
+   scan:Scan
+   nextLine:NextLine
 
 define
     % Fetches the N-th line in a file
@@ -13,8 +14,8 @@ define
     fun {Scan InFile N}
         Line={InFile getS($)}
     in
-        if Line==false then
-            {InFile close}
+       if Line==false then
+	    {InFile close}
             none
         else
             if N==1 then
@@ -23,6 +24,17 @@ define
                 {Scan InFile N-1}
             end
         end
+    end
+
+    fun {NextLine Infile}
+       Line = {Infile getS($)}
+    in
+       if Line == false then
+	  {Infile close}
+	  none
+       else
+	  Line
+       end
     end
 
     class TextFile % This class enables line-by-line reading
