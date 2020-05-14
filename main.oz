@@ -11,12 +11,13 @@ define
 %%% Easier macros for imported functions
    Browse = Browser.browse
    Show = System.show
-   Data = {Dictionary.new}
+   Parsed
+   Data
 
 %%% Read File
-    fun {GetFirstLine IN_NAME}
-        {Reader.scan {New Reader.textfile init(name:IN_NAME)} 1}
-    end
+   fun {GetFirstLine IN_NAME}
+      {Reader.scan {New Reader.textfile init(name:IN_NAME)} 1}
+   end
 
 %%% GUI
     % Make the window description, all the parameters are explained here:
@@ -50,44 +51,89 @@ define
       case S
       of nil then nil
       [] H|T then
-	 if {And {Or {Char.isAlNum H} == true {Char.isSpace H} == true} H \= 226}
-	 then  {Char.toLower H} | {Format T}
-	 else {Format T}
-	 end
+	      if {And {Or {Char.isAlNum H} == true {Char.isSpace H} == true} H \= 226}
+	         then  {Char.toLower H} | {Format T}
+	      else {Format T} end
+	   end
+   end
+
+   fun {RemoveDoubleSpaces S} 
+      case S
+      of nil then nil
+      [] H|T then
+         if T \= nil then
+            if {And {Char.isSpace H} == true {Char.isSpace T.1}} then {RemoveDoubleSpaces T}
+            else H | {RemoveDoubleSpaces T} end
+         else
+            H|{RemoveDoubleSpaces T}
+         end
       end
    end
 
    fun {FormatAndSplit Str}
-      {String.tokens {Format Str} & }
+	   {String.tokens {RemoveDoubleSpaces {Format Str}} & }
    end
 
    fun {ParseFile IN_NAME}
-      File = {New Reader.textfile init(name:IN_NAME)}
-      fun {ParseLines File}
-	 Line = {Reader.nextLine File}
+	   File = {New Reader.textfile init(name:IN_NAME)}
+	   fun {ParseLines File}
+	      Line = {Reader.nextLine File}
+	   in
+	      if Line == none then nil
+	      else
+	         thread {FormatAndSplit Line} end | {ParseLines File}
+	      end
+	   end
       in
-	 if Line == none then
-	    nil
-	 else
-	    thread {FormatAndSplit Line} end | {ParseLines File}
-	 end
-      end
-   in
-      {ParseLines File}
+	      {ParseLines File}
    end
 
    fun {ParseAllFiles N}
-      IN_NAME ="test_"#N#".txt"
+	   IN_NAME ="tweets/part_"#N#".txt"
    in
-      if N == 3 then nil
-      else
-	 {Append thread {ParseFile IN_NAME} end {ParseAllFiles N+1}}
-      end
+	   if N == 209 then nil
+	   else
+	      {Append thread {ParseFile IN_NAME} end {ParseAllFiles N+1}}
+	   end
    end
 
-   {Browse {ParseFile "tweets/part_1.txt"}}
-   %{Browse {Reader.scan {New Reader.textfile init(name:"tweets/part_1.txt")} 7}}
-   %{Browse {ParseAllFiles 1}}
-   
-   
+   fun {SaveData Parsed}
+      Data = {Dictionary.new}
+      proc {ReadParsedLines D L}
+         proc {ReadParsedGroup D L}
+            case L
+            of nil then skip
+            [] H|T then
+               if T \= nil then
+                  if {Dictionary.member D {String.toAtom H}} == true then
+                     {Dictionary.put D {String.toAtom H} {Append {Dictionary.get D {String.toAtom H}} T.1|nil}}
+                  else 
+                     {Dictionary.put D {String.toAtom H} T.1|nil} 
+                  end
+                  {ReadParsedGroup D T}
+               else skip end
+            end
+         end
+         in
+         case L
+         of nil then skip
+         [] H|T then
+            {ReadParsedGroup Data H}
+            {ReadParsedLines Data T}
+         end
+      end
+      in
+      {ReadParsedLines Data Parsed}
+      Data
+   end
+
+
+   %{Browse {ParseFile "tweets/part_1.txt"}}
+
+   thread Parsed = {ParseAllFiles 1} end
+   thread Data = {SaveData Parsed} end
+   {Browse {Dictionary.entries Data}}
+
+
+
 end
