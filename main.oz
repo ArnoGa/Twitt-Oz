@@ -14,11 +14,6 @@ define
    Parsed
    Data
 
-%%% Read File
-   fun {GetFirstLine IN_NAME}
-      {Reader.scan {New Reader.textfile init(name:IN_NAME)} 1}
-   end
-
 %%% GUI
     % Make the window description, all the parameters are explained here:
     % http://mozart2.org/mozart-v1/doc-1.4.0/mozart-stdlib/wp/qtk/html/node7.html)
@@ -31,27 +26,29 @@ define
 			      text(handle:Text2 width:28 height:5 background:black foreground:white glue:w wrap:word)
 			      action:proc{$}{Application.exit 0} end % quit app gracefully on window closing
 			      )
-   proc {Press} Inserted in
-      Inserted = {Text1 getText(p(1 0) 'end' $)} % example using coordinates to get text
-      {Text2 set(1:Inserted)} % you can get/set text this way too
+   proc {Press} Inserted Word in
+      Inserted = {Text1 getText(p(1 0) 'end' $)}
+      Word = {FindNextWord {GetLastWord {Format Inserted}}}
+      {Text1 tk(insert 'end' " ")}
+      {Text1 tk(insert 'end' Word)}
+      {Text2 set(1: Word)}
    end
-    % Build the layout from the description
+   % Build the layout from the description
    W={QTk.build Description}
    {W show}
 
-   {Text1 tk(insert 'end' {GetFirstLine "tweets/part_1.txt"})}
-   {Text1 bind(event:"<Control-s>" action:Press)} % You can also bind events
+   {Text1 tk(insert 'end' "Please wait for parsing...")}
+   {Text1 bind(event:"<Control-s>" action:Press)}
+   thread Parsed = {ParseAllFiles 1} end
+   Data = {SaveData Parsed}
+   {Text1 set(1: "Parsing done")}
 
-   
-   %{Dictionary.put Data test 1|nil}
-   %{Dictionary.put Data test  {Append {Dictionary.get Data test} 2} }
-   %{Browse {Dictionary.get Data test}}
-
+   %%%%%%%%%%%% Parsing functions %%%%%%%%%%%
    fun {Format S}
       case S
       of nil then nil
       [] H|T then
-	      if {And {Or {Char.isAlNum H} == true {Char.isSpace H} == true} H \= 226}
+	      if {And {And {Or {Char.isAlNum H} == true {Char.isSpace H} == true} H \= 226} H \= 10} % exclude all non alphanumeric char, needed to exclude " and \n manually 
 	         then  {Char.toLower H} | {Format T}
 	      else {Format T} end
 	   end
@@ -97,6 +94,7 @@ define
 	   end
    end
 
+   %Data.values are list of words
    fun {SaveData Parsed}
       Data = {Dictionary.new}
       proc {ReadParsedLines D L}
@@ -106,7 +104,7 @@ define
             [] H|T then
                if T \= nil then
                   if {Dictionary.member D {String.toAtom H}} == true then
-                     {Dictionary.put D {String.toAtom H} {Append {Dictionary.get D {String.toAtom H}} T.1|nil}}
+                     {Dictionary.put D {String.toAtom H} {Append {Dictionary.get D {String.toAtom H}} T.1|nil}} % append value with T.1 for the key H
                   else 
                      {Dictionary.put D {String.toAtom H} T.1|nil} 
                   end
@@ -126,14 +124,65 @@ define
       {ReadParsedLines Data Parsed}
       Data
    end
+   
 
+   %%%%%%%%%%%% Predictive functions %%%%%%%%%%%
+   fun {GetLastWord S}
+      Splitted
+      in
+      Splitted = {String.tokens S & }
+      case Splitted of nil then ""
+      else
+         {List.last Splitted}
+      end
+   end
 
-   %{Browse {ParseFile "tweets/part_1.txt"}}
+   fun {FindNextWord W}
+      Pairs = {Dictionary.condGet Data {String.toAtom W} nil}
+      in
+      case Pairs of nil then "I"
+      else
+         {MostOccurIn Pairs}
+      end      
+   end
 
-   thread Parsed = {ParseAllFiles 1} end
-   thread Data = {SaveData Parsed} end
-   {Browse {Dictionary.entries Data}}
+   /*
+    *  P       ->  A list of all the values of a dictionary key
+    *  Current ->  Current word the function is checking
+    *  Word    ->  Word with the most occur for now
+    *  Max     ->  Number of occur of Word
+    */
+   fun {MostOccurIn P}
+      fun {MostOccur P Current Word Max}
+         N
+         in
+         case Current
+         of nil then Word
+         [] H|T then
+            N = {Count P H}
+            if N > Max then
+               {MostOccur P T H N}
+            else
+               {MostOccur P T Word Max}
+            end
+         end
+      end
+      in
+      {MostOccur P P.1 P.1 0}
+   end
 
-
+   fun {Count L Word}
+      fun {CountRecur C L Word}
+         case L
+         of nil then C
+         [] H|T then
+            if Word == H then {CountRecur C+1 T Word}
+            else {CountRecur C T Word}
+            end
+         end
+      end
+      in
+      {CountRecur 0 L Word}
+   end
 
 end
