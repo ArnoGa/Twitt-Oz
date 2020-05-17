@@ -11,10 +11,11 @@ Programme en oz capable de parser des fichiers texte contenant un tweet sur chaq
 
 ## Description des fichiers
 
-- `tweets/*`  :Dossier des fichiers à parser.
-- `Makefile`  :Makefile du projet.
-- `Main.oz`   :Contient le programme principal.
-- `Reader.oz` :Contient les fonctions qui permettent la lecture des fichiers.
+- `tweets/*`  : Dossier des fichiers à parser.
+- `Makefile`  : Makefile du projet.
+- `Main.oz`   : Contient le programme principal.
+- `Reader.oz` : Contient les fonctions qui permettent la lecture des fichiers.
+- `Start.bat` : Excecutable pour Windows
 
 ## Utilisation
 Linux: 
