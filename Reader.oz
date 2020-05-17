@@ -3,7 +3,6 @@ import
     Open
 export
    textfile:TextFile
-   scan:Scan
    nextLine:NextLine
 
 define
