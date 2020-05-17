@@ -39,9 +39,6 @@ define
 
    {Text1 tk(insert 'end' "Please wait for parsing...")}
    {Text1 bind(event:"<Control-s>" action:Press)}
-   thread Parsed = {ParseAllFiles 1} end
-   Data = {SaveData Parsed}
-   {Text1 set(1: "Parsing done")}
 
    %%%%%%%%%%%% Parsing functions %%%%%%%%%%%
    fun {Format S}
@@ -184,5 +181,9 @@ define
       in
       {CountRecur 0 L Word}
    end
+
+   thread Parsed = {ParseAllFiles 1} end
+   Data = {SaveData Parsed}
+   {Text1 set(1: "Parsing done")}
 
 end
