@@ -17,8 +17,15 @@ Programme en oz capable de parser des fichiers texte contenant un tweet sur chaq
 - `Reader.oz` :Contient les fonctions qui permettent la lecture des fichiers.
 
 ## Utilisation
-Linux:
-
+Linux: 
 ```bash
 make run
 ```
+
+Windows:  
+Lancer Start.bat ou écrire ceci dans le PowerShell:
+```bash
+ozc -c Reader.oz -o Reader.ozf
+ozc -c main.oz -o main.oza
+ozengine main.oza
+```  
